@@ -1,10 +1,5 @@
-# 🦜️🔗 LangChain Go
 
-[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/tmc/langchaingo)
-[![scorecard](https://goreportcard.com/badge/github.com/tmc/langchaingo)](https://goreportcard.com/report/github.com/tmc/langchaingo)
-[![](https://dcbadge.vercel.app/api/server/2NgDkQDjpQ?compact=true&style=flat)](https://discord.gg/2NgDkQDjpQ)
-[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/tmc/langchaingo)
-[<img src="https://github.com/codespaces/badge.svg" title="Open in Github Codespace" width="150" height="20">](https://codespaces.new/tmc/langchaingo)
+<img width="626" alt="Capture d’écran 2024-08-25 à 10 27 12" src="https://github.com/user-attachments/assets/617da5da-2d12-4aaf-a344-6e81dca5e90e">
 
 ⚡ Building applications with LLMs through composability, with Go! ⚡
 
