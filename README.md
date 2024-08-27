@@ -1,9 +1,8 @@
+Environment Aware Agents: (In-Progress) 
 
-<img width="626" alt="Capture d’écran 2024-08-25 à 10 27 12" src="https://github.com/user-attachments/assets/617da5da-2d12-4aaf-a344-6e81dca5e90e">
 
-⚡ Building applications with LLMs through composability, with Go! ⚡
 
-## 🤔 What is this?
+
 
 This is the Go language implementation of [LangChain](https://github.com/langchain-ai/langchain).
 
@@ -13,7 +12,7 @@ This is the Go language implementation of [LangChain](https://github.com/langcha
 - [API Reference](https://pkg.go.dev/github.com/tmc/langchaingo)
 
 
-## 🎉 Examples
+##  Examples
 
 See [./examples](./examples) for example usage.
 
@@ -59,8 +58,3 @@ Here are some links to blog posts and articles on using Langchain Go:
 - [Creating a ChatGPT Clone that Runs on Your Laptop with Go](https://sausheong.com/creating-a-chatgpt-clone-that-runs-on-your-laptop-with-go-bf9d41f1cf88?sk=05dc67b60fdac6effb1aca84dd2d654e) - Aug 2023
 
 
-# Contributors
-
-<a href="https://github.com/tmc/langchaingo/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=tmc/langchaingo" />
-</a>
