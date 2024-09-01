@@ -4,7 +4,10 @@
 
 
 
-This is the Go language implementation of [LangChain](https://github.com/langchain-ai/langchain).<img width="333" alt="Capture d’écran 2024-09-01 à 10 37 36" src="https://github.com/user-attachments/assets/803478f1-40b3-40b6-9559-f022c71ec888">
+
+
+
+
 
 
 
