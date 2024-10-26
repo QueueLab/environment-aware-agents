@@ -1,4 +1,3 @@
-
 # Contributing to langchaingo
 
 First off, thanks for taking the time to contribute! ❤️
@@ -29,6 +28,8 @@ All types of contributions are encouraged and valued. See the [Table of Contents
     - [Commit your update](#commit-your-update)
     - [Pull Request](#pull-request)
     - [Your PR is merged!](#your-pr-is-merged)
+  - [Running Tests](#running-tests)
+  - [Code Style and Linting Rules](#code-style-and-linting-rules)
 
 ## Code of Conduct
 
@@ -165,3 +166,24 @@ Congratulations :tada::tada: The langchaingo team thanks you :sparkles:.
 Once your PR is merged, your contributions will be publicly visible on the repository contributors list.
 
 Now that you are part of the community!
+
+### Running Tests
+
+To run tests, use the following command:
+
+```shell
+go test ./...
+```
+
+This will run all the tests in the repository.
+
+### Code Style and Linting Rules
+
+We use `golangci-lint` to enforce code quality. Please ensure that your code adheres to the following guidelines:
+
+- Run `golangci-lint run` to check for linting errors.
+- Follow the existing code style and conventions.
+- Add comments to your code where necessary to improve readability.
+- Ensure that your code is properly formatted by running `gofmt`.
+
+By following these guidelines, you help us maintain a high standard of code quality and readability.

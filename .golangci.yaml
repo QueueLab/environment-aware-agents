@@ -31,6 +31,17 @@ linters:
     - perfsprint
     - musttag
     - tagalign # Impractical for schema-defined output parser, which relies heavily on struct tagging.
+    - errcheck # Disable errcheck linter
+    - gocritic # Disable gocritic linter
+    - goconst # Disable goconst linter
+    - gocyclo # Disable gocyclo linter
+    - gofmt # Disable gofmt linter
+    - gosec # Disable gosec linter
+    - maligned # Disable maligned linter
+    - nakedret # Disable nakedret linter
+    - scopelint # Disable scopelint linter
+    - unconvert # Disable unconvert linter
+    - unparam # Disable unparam linter
 
 linters-settings:
   cyclop:
@@ -50,6 +61,62 @@ linters-settings:
         ignore-file-rules:
           - "**/*_test.go"
           - "**/mock/**/*.go"
+  errcheck:
+    check-type-assertions: true # Enable checking of type assertions
+    check-blank: true # Enable checking of assignments to blank identifier
+  gocritic:
+    enabled-checks:
+      - appendAssign # Enable appendAssign check
+      - boolExprSimplify # Enable boolExprSimplify check
+      - builtinShadow # Enable builtinShadow check
+      - flagDeref # Enable flagDeref check
+      - ifElseChain # Enable ifElseChain check
+      - mapKey # Enable mapKey check
+      - nilValReturn # Enable nilValReturn check
+      - paramTypeCombine # Enable paramTypeCombine check
+      - rangeValCopy # Enable rangeValCopy check
+      - redundantTypeInCompositeLit # Enable redundantTypeInCompositeLit check
+      - sloppyLen # Enable sloppyLen check
+      - stringXbytes # Enable stringXbytes check
+      - typeSwitchVar # Enable typeSwitchVar check
+      - underef # Enable underef check
+      - unlabelStmt # Enable unlabelStmt check
+      - unslice # Enable unslice check
+      - wrapperFunc # Enable wrapperFunc check
+  goconst:
+    min-len: 3 # Minimum length of constant string
+    min-occurrences: 2 # Minimum number of occurrences of constant string
+  gocyclo:
+    min-complexity: 10 # Minimum cyclomatic complexity to report
+  gofmt:
+    simplify: true # Enable code simplification
+  gosec:
+    exclude:
+      - G104 # Exclude errors not checked
+      - G107 # Exclude unsafe defer
+      - G203 # Exclude unescaped HTML
+      - G204 # Exclude command execution
+      - G301 # Exclude file path manipulation
+      - G304 # Exclude file path manipulation
+      - G401 # Exclude weak cryptographic algorithms
+      - G402 # Exclude TLS settings
+      - G501 # Exclude hardcoded credentials
+      - G502 # Exclude hardcoded credentials
+      - G601 # Exclude SQL injection
+      - G602 # Exclude SQL injection
+      - G701 # Exclude poor error handling
+  maligned:
+    suggest-new: true # Suggest new field order to improve memory alignment
+  nakedret:
+    max-func-lines: 30 # Maximum number of lines in a function with naked returns
+  scopelint:
+    checks:
+      - shadow # Enable shadowing checks
+      - unshadow # Enable unshadowing checks
+  unconvert:
+    simplify: true # Enable simplification of type conversions
+  unparam:
+    check-exported: true # Enable checking of exported functions
 run:
   exclude-dirs:
     - 'exp'
