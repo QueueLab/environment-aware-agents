@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/chains"
@@ -54,10 +55,17 @@ func (e *Executor) Call(ctx context.Context, inputValues map[string]any, _ ...ch
 	}
 	nameToTool := getNameToTool(e.Agent.GetTools())
 
+	// Create a root context with a timeout
+	rootCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Pass relevant computation state using context.WithValue
+	rootCtx = context.WithValue(rootCtx, "inputs", inputs)
+
 	steps := make([]schema.AgentStep, 0)
 	for i := 0; i < e.MaxIterations; i++ {
 		var finish map[string]any
-		steps, finish, err = e.doIteration(ctx, steps, nameToTool, inputs)
+		steps, finish, err = e.doIteration(rootCtx, steps, nameToTool, inputs)
 		if finish != nil || err != nil {
 			return finish, err
 		}

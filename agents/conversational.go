@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/chains"
@@ -79,6 +80,10 @@ func (a *ConversationalAgent) Plan(
 			return nil
 		}
 	}
+
+	// Use context.WithTimeout to manage task execution time
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 
 	output, err := chains.Predict(
 		ctx,
