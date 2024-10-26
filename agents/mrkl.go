@@ -93,6 +93,20 @@ func (a *OneShotZeroAgent) Plan(
 		return nil, nil, err
 	}
 
+	// Handle dynamic control flow
+	if strings.Contains(output, "dynamic_control_flow") {
+		// Extract the next tool to call from the output
+		nextTool := extractNextTool(output)
+		if nextTool != "" {
+			action := schema.AgentAction{
+				Tool:      nextTool,
+				ToolInput: "", // You may need to set the appropriate input for the next tool
+				Log:       output,
+			}
+			return []schema.AgentAction{action}, nil, nil
+		}
+	}
+
 	return a.parseOutput(output)
 }
 
@@ -135,6 +149,20 @@ func (a *OneShotZeroAgent) parseOutput(output string) ([]schema.AgentAction, *sc
 	matches := r.FindStringSubmatch(output)
 	if len(matches) == 0 {
 		return nil, nil, fmt.Errorf("%w: %s", ErrUnableToParseOutput, output)
+	}
+
+	// Handle dynamic control flow
+	if strings.Contains(output, "dynamic_control_flow") {
+		// Extract the next tool to call from the output
+		nextTool := extractNextTool(output)
+		if nextTool != "" {
+			action := schema.AgentAction{
+				Tool:      nextTool,
+				ToolInput: "", // You may need to set the appropriate input for the next tool
+				Log:       output,
+			}
+			return []schema.AgentAction{action}, nil, nil
+		}
 	}
 
 	return []schema.AgentAction{
