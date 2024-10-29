@@ -82,18 +82,32 @@ func (a *OneShotZeroAgent) Plan(
 		}
 	}
 
-	output, err := chains.Predict(
-		ctx,
-		a.Chain,
-		fullInputs,
-		chains.WithStopWords([]string{"\nObservation:", "\n\tObservation:"}),
-		chains.WithStreamingFunc(stream),
-	)
-	if err != nil {
-		return nil, nil, err
-	}
+	outputCh := make(chan string)
+	errCh := make(chan error)
 
-	return a.parseOutput(output)
+	go func() {
+		output, err := chains.Predict(
+			ctx,
+			a.Chain,
+			fullInputs,
+			chains.WithStopWords([]string{"\nObservation:", "\n\tObservation:"}),
+			chains.WithStreamingFunc(stream),
+		)
+		if err != nil {
+			errCh <- err
+			return
+		}
+		outputCh <- output
+	}()
+
+	select {
+	case output := <-outputCh:
+		return a.parseOutput(output)
+	case err := <-errCh:
+		return nil, nil, err
+	case <-ctx.Done():
+		return nil, nil, ctx.Err()
+	}
 }
 
 func (a *OneShotZeroAgent) GetInputKeys() []string {

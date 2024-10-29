@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"github.com/tmc/langchaingo/agents"
@@ -140,4 +141,50 @@ func TestExecutorWithOpenAIFunctionAgent(t *testing.T) {
 
 	require.True(t, strings.Contains(result, "47") || strings.Contains(result, "49"),
 		"correct answer 47 or 49 not in response")
+}
+
+func TestExecutorDynamicControlFlow(t *testing.T) {
+	t.Parallel()
+
+	if openaiKey := os.Getenv("OPENAI_API_KEY"); openaiKey == "" {
+		t.Skip("OPENAI_API_KEY not set")
+	}
+
+	llm, err := openai.New()
+	require.NoError(t, err)
+
+	calculator := tools.Calculator{}
+
+	a, err := agents.Initialize(
+		llm,
+		[]tools.Tool{calculator},
+		agents.DynamicControlFlowAgent,
+	)
+	require.NoError(t, err)
+
+	result, err := chains.Run(context.Background(), a, "Calculate the square root of 144")
+	require.NoError(t, err)
+
+	require.True(t, strings.Contains(result, "12"), "correct answer 12 not in response")
+}
+
+func TestExecutorWithTimeout(t *testing.T) {
+	t.Parallel()
+
+	a := &testAgent{
+		actions: []schema.AgentAction{
+			{Tool: "testTool", ToolInput: "testInput"},
+		},
+	}
+	executor := agents.NewExecutor(
+		a,
+		agents.WithMaxIterations(3),
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	_, err := chains.Call(ctx, executor, nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "context deadline exceeded")
 }

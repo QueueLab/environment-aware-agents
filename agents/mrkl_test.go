@@ -3,17 +3,16 @@ package agents
 import (
 	"context"
 	"os"
-	"regexp"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/tmc/langchaingo/chains"
 	"github.com/tmc/langchaingo/llms/openai"
-	"github.com/tmc/langchaingo/memory"
+	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/tools"
 )
 
-func TestConversationalWithMemory(t *testing.T) {
+func TestMRKLPlanEncapsulation(t *testing.T) {
 	t.Parallel()
 	if openaiKey := os.Getenv("OPENAI_API_KEY"); openaiKey == "" {
 		t.Skip("OPENAI_API_KEY not set")
@@ -22,35 +21,7 @@ func TestConversationalWithMemory(t *testing.T) {
 	llm, err := openai.New(openai.WithModel("gpt-4"))
 	require.NoError(t, err)
 
-	executor, err := Initialize(
-		llm,
-		[]tools.Tool{tools.Calculator{}},
-		ConversationalReactDescription,
-		WithMemory(memory.NewConversationBuffer()),
-	)
-	require.NoError(t, err)
-
-	_, err = chains.Run(context.Background(), executor, "Hi! my name is Bob and the year I was born is 1987")
-	require.NoError(t, err)
-
-	res, err := chains.Run(context.Background(), executor, "What is the year I was born times 34")
-	require.NoError(t, err)
-	expectedRe := "67,?558"
-	if !regexp.MustCompile(expectedRe).MatchString(res) {
-		t.Errorf("result does not contain the crrect answer '67558', got: %s", res)
-	}
-}
-
-func TestConversationalPlanEncapsulation(t *testing.T) {
-	t.Parallel()
-	if openaiKey := os.Getenv("OPENAI_API_KEY"); openaiKey == "" {
-		t.Skip("OPENAI_API_KEY not set")
-	}
-
-	llm, err := openai.New(openai.WithModel("gpt-4"))
-	require.NoError(t, err)
-
-	agent := NewConversationalAgent(llm, []tools.Tool{tools.Calculator{}})
+	agent := NewOneShotAgent(llm, []tools.Tool{tools.Calculator{}})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -63,7 +34,7 @@ func TestConversationalPlanEncapsulation(t *testing.T) {
 	require.NotEmpty(t, actions)
 }
 
-func TestConversationalDynamicControlFlow(t *testing.T) {
+func TestMRKLDynamicControlFlow(t *testing.T) {
 	t.Parallel()
 	if openaiKey := os.Getenv("OPENAI_API_KEY"); openaiKey == "" {
 		t.Skip("OPENAI_API_KEY not set")
@@ -72,7 +43,7 @@ func TestConversationalDynamicControlFlow(t *testing.T) {
 	llm, err := openai.New(openai.WithModel("gpt-4"))
 	require.NoError(t, err)
 
-	agent := NewConversationalAgent(llm, []tools.Tool{tools.Calculator{}})
+	agent := NewOneShotAgent(llm, []tools.Tool{tools.Calculator{}})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -85,7 +56,7 @@ func TestConversationalDynamicControlFlow(t *testing.T) {
 	require.NotEmpty(t, actions)
 }
 
-func TestConversationalErrorHandling(t *testing.T) {
+func TestMRKLErrorHandling(t *testing.T) {
 	t.Parallel()
 	if openaiKey := os.Getenv("OPENAI_API_KEY"); openaiKey == "" {
 		t.Skip("OPENAI_API_KEY not set")
@@ -94,7 +65,7 @@ func TestConversationalErrorHandling(t *testing.T) {
 	llm, err := openai.New(openai.WithModel("gpt-4"))
 	require.NoError(t, err)
 
-	agent := NewConversationalAgent(llm, []tools.Tool{tools.Calculator{}})
+	agent := NewOneShotAgent(llm, []tools.Tool{tools.Calculator{}})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

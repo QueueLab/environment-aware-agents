@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/chains"
@@ -106,11 +107,37 @@ func (e *Executor) doIteration( // nolint
 		return steps, e.getReturn(finish, steps), nil
 	}
 
+	var wg sync.WaitGroup
+	actionCh := make(chan schema.AgentAction, len(actions))
+	stepCh := make(chan schema.AgentStep, len(actions))
+	errCh := make(chan error, len(actions))
+
 	for _, action := range actions {
-		steps, err = e.doAction(ctx, steps, nameToTool, action)
-		if err != nil {
-			return steps, nil, err
-		}
+		wg.Add(1)
+		go func(action schema.AgentAction) {
+			defer wg.Done()
+			step, err := e.doAction(ctx, steps, nameToTool, action)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			stepCh <- step
+		}(action)
+	}
+
+	go func() {
+		wg.Wait()
+		close(actionCh)
+		close(stepCh)
+		close(errCh)
+	}()
+
+	for step := range stepCh {
+		steps = append(steps, step)
+	}
+
+	if len(errCh) > 0 {
+		return steps, nil, <-errCh
 	}
 
 	return steps, nil, nil
@@ -121,28 +148,28 @@ func (e *Executor) doAction(
 	steps []schema.AgentStep,
 	nameToTool map[string]tools.Tool,
 	action schema.AgentAction,
-) ([]schema.AgentStep, error) {
+) (schema.AgentStep, error) {
 	if e.CallbacksHandler != nil {
 		e.CallbacksHandler.HandleAgentAction(ctx, action)
 	}
 
 	tool, ok := nameToTool[strings.ToUpper(action.Tool)]
 	if !ok {
-		return append(steps, schema.AgentStep{
+		return schema.AgentStep{
 			Action:      action,
 			Observation: fmt.Sprintf("%s is not a valid tool, try another one", action.Tool),
-		}), nil
+		}, nil
 	}
 
 	observation, err := tool.Call(ctx, action.ToolInput)
 	if err != nil {
-		return nil, err
+		return schema.AgentStep{}, err
 	}
 
-	return append(steps, schema.AgentStep{
+	return schema.AgentStep{
 		Action:      action,
 		Observation: observation,
-	}), nil
+	}, nil
 }
 
 func (e *Executor) getReturn(finish *schema.AgentFinish, steps []schema.AgentStep) map[string]any {
