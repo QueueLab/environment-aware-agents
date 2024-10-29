@@ -1,9 +1,13 @@
 package graph_orchestration
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tmc/langchaingo/llms"
+	"github.com/tmc/langchaingo/schema"
+	"github.com/tmc/langchaingo/tools"
 )
 
 func TestAddNode(t *testing.T) {
@@ -37,13 +41,21 @@ func TestExecute(t *testing.T) {
 	graph.AddNode("B")
 	graph.AddEdge("A", "B")
 
-	err := graph.Execute("A")
+	llm := &llms.MockModel{}
+	tools := []tools.Tool{&tools.MockTool{}}
+	agent := NewGraphAgent(llm, tools)
+
+	err := graph.Execute(context.Background(), "A", agent)
 	assert.NoError(t, err)
 }
 
 func TestExecuteNonExistentNode(t *testing.T) {
 	graph := NewGraph()
 
-	err := graph.Execute("A")
+	llm := &llms.MockModel{}
+	tools := []tools.Tool{&tools.MockTool{}}
+	agent := NewGraphAgent(llm, tools)
+
+	err := graph.Execute(context.Background(), "A", agent)
 	assert.Error(t, err)
 }

@@ -1,14 +1,19 @@
 package graph_orchestration
 
 import (
+	"context"
 	"errors"
 	"sync"
+
+	"github.com/tmc/langchaingo/schema"
+	"github.com/tmc/langchaingo/tools"
 )
 
 // Node represents a single node in the graph.
 type Node struct {
 	ID       string
 	Children []*Node
+	Action   schema.AgentAction
 }
 
 // Graph represents a directional graph.
@@ -50,7 +55,7 @@ func (g *Graph) AddEdge(fromID, toID string) error {
 }
 
 // Execute executes the graph starting from the given node ID.
-func (g *Graph) Execute(startID string) error {
+func (g *Graph) Execute(ctx context.Context, startID string, agent *GraphAgent) error {
 	g.mu.Lock()
 	startNode, exists := g.Nodes[startID]
 	g.mu.Unlock()
@@ -59,16 +64,28 @@ func (g *Graph) Execute(startID string) error {
 		return errors.New("start node does not exist")
 	}
 
-	return g.executeNode(startNode)
+	return g.executeNode(ctx, startNode, agent)
 }
 
-func (g *Graph) executeNode(node *Node) error {
-	// Placeholder for node execution logic
-	// This is where you would integrate the agent's actions
+func (g *Graph) executeNode(ctx context.Context, node *Node, agent *GraphAgent) error {
+	// Execute the action associated with the node
+	_, _, err := agent.Plan(ctx, nil, map[string]string{"input": node.ID})
+	if err != nil {
+		return err
+	}
+
+	// Execute child nodes
 	for _, child := range node.Children {
-		if err := g.executeNode(child); err != nil {
+		if err := g.executeNode(ctx, child, agent); err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+// GetTools returns the tools available to the graph.
+func (g *Graph) GetTools() []tools.Tool {
+	// Placeholder for returning tools
+	// This is where you would integrate the tools used by the graph
 	return nil
 }
