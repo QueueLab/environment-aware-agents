@@ -19,7 +19,11 @@ func weightedContext(ctx context.Context, weight TaskWeight) context.Context {
 
 // agentTask simulates a task that checks for context cancellation and prioritization
 func agentTask(ctx context.Context) {
-	weight := ctx.Value("weight").(TaskWeight)
+ weight, ok := ctx.Value("weight").(TaskWeight)
+ if !ok {
+     fmt.Println("Error: Invalid weight in context")
+     return
+ }
 	fmt.Printf("Executing task with priority: %d\n", weight.Priority)
 
 	// Handle timeouts, deadlines
