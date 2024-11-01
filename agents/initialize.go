@@ -49,10 +49,15 @@ func Initialize(
 
 // NewDynamicControlFlowAgent initializes an agent with dynamic control flow capabilities.
 func NewDynamicControlFlowAgent(
-	llm llms.Model,
-	tools []tools.Tool,
-	opts ...Option,
+    llm llms.Model,
+    tools []tools.Tool,
+    opts ...Option,
 ) (*Executor, error) {
-	agent := NewOneShotAgent(llm, tools, opts...)
-	return NewExecutor(agent, opts...), nil
+    for _, tool := range tools {
+        if _, ok := tool.(DynamicControlFlowTool); !ok {
+            return nil, fmt.Errorf("tool %s does not support dynamic control flow", tool.Name())
+        }
+    }
+    agent := NewOneShotAgent(llm, tools, opts...)
+    return NewExecutor(agent, opts...), nil
 }
