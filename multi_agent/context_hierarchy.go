@@ -17,7 +17,10 @@ func main() {
 
 	go agentTask(childCtx)
 
-	time.Sleep(3 * time.Second) // Wait to see if the task finishes
+ select {
+ case <-time.After(3 * time.Second):
+     fmt.Println("Main: Timeout reached")
+ }
 }
 
 // agentTask simulates a task that checks for context cancellation
