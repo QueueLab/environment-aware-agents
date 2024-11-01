@@ -96,19 +96,24 @@ func (a *ConversationalAgent) Plan(
 		return nil, nil, err
 	}
 
-	// Handle dynamic control flow
-	if strings.Contains(output, "dynamic_control_flow") {
-		// Extract the next tool to call from the output
-		nextTool := extractNextTool(output)
-		if nextTool != "" {
-			action := schema.AgentAction{
-				Tool:      nextTool,
-				ToolInput: "", // You may need to set the appropriate input for the next tool
-				Log:       output,
-			}
-			return []schema.AgentAction{action}, nil, nil
-		}
-	}
+ if action, ok := handleDynamicControlFlow(output); ok {
+     return []schema.AgentAction{action}, nil, nil
+ }
+
+ // ... (elsewhere in the file)
+ func handleDynamicControlFlow(output string) (schema.AgentAction, bool) {
+     if strings.Contains(output, "dynamic_control_flow") {
+         nextTool := extractNextTool(output)
+         if nextTool != "" {
+             return schema.AgentAction{
+                 Tool:      nextTool,
+                 ToolInput: "",
+                 Log:       output,
+             }, true
+         }
+     }
+     return schema.AgentAction{}, false
+ }
 
 	return a.parseOutput(output)
 }
