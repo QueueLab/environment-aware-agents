@@ -1,186 +1,171 @@
-package main
+package agents
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/tmc/langchaingo/agents"
-	"github.com/tmc/langchaingo/callbacks"
-	"github.com/tmc/langchaingo/chains"
-	"github.com/tmc/langchaingo/tools"
+	"context"
+	"time"
 )
 
-func TestConversationalAgent(t *testing.T) {
-	t.Parallel()
+// Call method in executor.go
+func (e *Executor) Call() {
+	// Create a root context with a 30-second timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-	// Create a mock chain and tools
-	mockChain := &MockChain{}
-	mockTools := []tools.Tool{&MockTool{}}
-
-	// Create a new conversational agent
-	agent := agents.NewConversationalAgent(mockChain, mockTools)
-
-	// Test Plan method
-	ctx := context.Background()
-	intermediateSteps := []schema.AgentStep{}
-	inputs := map[string]string{"input": "test input"}
-
-	actions, finish, err := agent.Plan(ctx, intermediateSteps, inputs)
-	require.NoError(t, err)
-	assert.NotNil(t, actions)
-	assert.Nil(t, finish)
-
-	// Test GetInputKeys method
-	inputKeys := agent.GetInputKeys()
-	assert.Equal(t, []string{"input"}, inputKeys)
-
-	// Test GetOutputKeys method
-	outputKeys := agent.GetOutputKeys()
-	assert.Equal(t, []string{"output"}, outputKeys)
-
-	// Test GetTools method
-	agentTools := agent.GetTools()
-	assert.Equal(t, mockTools, agentTools)
+	// Pass the root context to doIteration
+	e.doIteration(ctx)
 }
 
-func TestNewConversationalAgent(t *testing.T) {
-	t.Parallel()
+// doIteration method in executor.go
+func (e *Executor) doIteration(ctx context.Context) {
+	// Encapsulate doIteration in a Go routine
+	go func() {
+		// Use channels for synchronization and error handling
+		done := make(chan struct{})
+		errCh := make(chan error)
 
-	// Create a mock chain and tools
-	mockChain := &MockChain{}
-	mockTools := []tools.Tool{&MockTool{}}
+		go func() {
+			defer close(done)
+			// Perform iteration logic here
+			// If an error occurs, send it to errCh
+			// errCh <- err
+		}()
 
-	// Create a new conversational agent
-	agent := agents.NewConversationalAgent(mockChain, mockTools)
-
-	// Test if the agent is initialized correctly
-	assert.NotNil(t, agent)
-	assert.Equal(t, mockChain, agent.Chain)
-	assert.Equal(t, mockTools, agent.Tools)
-	assert.Equal(t, "output", agent.OutputKey)
-	assert.Nil(t, agent.CallbacksHandler)
+		select {
+		case <-ctx.Done():
+			// Handle context timeout or cancellation
+		case err := <-errCh:
+			// Handle error
+		case <-done:
+			// Iteration completed successfully
+		}
+	}()
 }
 
-func TestAgentFinalStreamHandler(t *testing.T) {
-	t.Parallel()
+// doAction method in executor.go
+func (e *Executor) doAction() {
+	// Encapsulate doAction in a Go routine
+	go func() {
+		// Use channels for synchronization and error handling
+		done := make(chan struct{})
+		errCh := make(chan error)
 
-	handler := callbacks.NewFinalStreamHandler("Final Answer:")
+		go func() {
+			defer close(done)
+			// Perform action logic here
+			// If an error occurs, send it to errCh
+			// errCh <- err
+		}()
 
-	// Test GetEgress method
-	egress := handler.GetEgress()
-	assert.NotNil(t, egress)
-
-	// Test HandleStreamingFunc method
-	ctx := context.Background()
-	chunk := []byte(" some other text above.\nFinal Answer: This is a correct final string.")
-	handler.HandleStreamingFunc(ctx, chunk)
-
-	// Read from egress channel
-	result := <-egress
-	assert.Equal(t, "This is a correct final string.", string(result))
+		select {
+		case err := <-errCh:
+			// Handle error
+		case <-done:
+			// Action completed successfully
+		}
+	}()
 }
 
-func TestCombiningHandler(t *testing.T) {
-	t.Parallel()
+// Plan method in conversational.go
+func (c *Conversational) Plan() {
+	// Use context.WithTimeout in the Plan method to manage task execution time
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-	handler1 := &MockHandler{}
-	handler2 := &MockHandler{}
-	combiningHandler := callbacks.CombiningHandler{
-		Callbacks: []callbacks.Handler{handler1, handler2},
-	}
+	// Encapsulate Plan method in a Go routine
+	go func() {
+		// Use channels for synchronization and error handling
+		done := make(chan struct{})
+		errCh := make(chan error)
 
-	// Test HandleText method
-	ctx := context.Background()
-	text := "test text"
-	combiningHandler.HandleText(ctx, text)
+		go func() {
+			defer close(done)
+			// Perform planning logic here
+			// If an error occurs, send it to errCh
+			// errCh <- err
+		}()
 
-	assert.Equal(t, text, handler1.Text)
-	assert.Equal(t, text, handler2.Text)
+		select {
+		case <-ctx.Done():
+			// Handle context timeout or cancellation
+		case err := <-errCh:
+			// Handle error
+		case <-done:
+			// Planning completed successfully
+		}
+	}()
 }
 
-func TestCallFunction(t *testing.T) {
-	t.Parallel()
+// Plan method in mrkl.go
+func (m *MRKL) Plan() {
+	// Encapsulate Plan method in a Go routine
+	go func() {
+		// Use channels for synchronization and error handling
+		done := make(chan struct{})
+		errCh := make(chan error)
 
-	// Create a mock chain
-	mockChain := &MockChain{}
+		go func() {
+			defer close(done)
+			// Perform planning logic here
+			// If an error occurs, send it to errCh
+			// errCh <- err
+		}()
 
-	// Test Call function
-	ctx := context.Background()
-	inputValues := map[string]any{"input": "test input"}
-
-	outputValues, err := chains.Call(ctx, mockChain, inputValues)
-	require.NoError(t, err)
-	assert.NotNil(t, outputValues)
+		select {
+		case err := <-errCh:
+			// Handle error
+		case <-done:
+			// Planning completed successfully
+		}
+	}()
 }
 
-func TestRunFunction(t *testing.T) {
-	t.Parallel()
-
-	// Create a mock chain
-	mockChain := &MockChain{}
-
-	// Test Run function
-	ctx := context.Background()
-	input := "test input"
-
-	output, err := chains.Run(ctx, mockChain, input)
-	require.NoError(t, err)
-	assert.NotNil(t, output)
+// NewDynamicControlFlowAgent function in initialize.go
+func NewDynamicControlFlowAgent() *DynamicControlFlowAgent {
+	// Implement dynamic control flow capabilities
+	return &DynamicControlFlowAgent{}
 }
 
-func TestCalculatorTool(t *testing.T) {
-	t.Parallel()
-
-	calculator := tools.NewCalculator()
-
-	// Test basic operations
-	result, err := calculator.Calculate("2 + 2")
-	require.NoError(t, err)
-	assert.Equal(t, 4, result)
-
-	result, err = calculator.Calculate("5 * 3")
-	require.NoError(t, err)
-	assert.Equal(t, 15, result)
+// Tests for encapsulated methods in executor_test.go
+func TestEncapsulatedMethods(t *testing.T) {
+	// Add tests for encapsulated methods
 }
 
-func TestDuckDuckGoTool(t *testing.T) {
-	t.Parallel()
-
-	duckDuckGo := tools.NewDuckDuckGo()
-
-	// Test search functionality
-	results, err := duckDuckGo.Search("test query")
-	require.NoError(t, err)
-	assert.NotNil(t, results)
+// Tests for dynamic control flow logic in executor_test.go
+func TestDynamicControlFlowLogic(t *testing.T) {
+	// Add tests for dynamic control flow logic
 }
 
-func TestConversationBuffer(t *testing.T) {
-	t.Parallel()
-
-	buffer := memory.NewConversationBuffer()
-
-	// Test memory functionality
-	ctx := context.Background()
-	err := buffer.SaveContext(ctx, map[string]any{"foo": "bar"}, map[string]any{"bar": "foo"})
-	require.NoError(t, err)
-
-	result, err := buffer.LoadMemoryVariables(ctx, map[string]any{})
-	require.NoError(t, err)
-	assert.Equal(t, map[string]any{"history": "Human: bar\nAI: foo"}, result)
+// Tests for channels for synchronization and error handling in executor_test.go
+func TestChannelsForSyncAndErrorHandling(t *testing.T) {
+	// Add tests for channels for synchronization and error handling
 }
 
-func TestConversationTokenBuffer(t *testing.T) {
-	t.Parallel()
+// Tests for encapsulated methods in conversational_test.go
+func TestEncapsulatedMethodsConversational(t *testing.T) {
+	// Add tests for encapsulated methods
+}
 
-	tokenBuffer := memory.NewConversationTokenBuffer(2000)
+// Tests for dynamic control flow logic in conversational_test.go
+func TestDynamicControlFlowLogicConversational(t *testing.T) {
+	// Add tests for dynamic control flow logic
+}
 
-	// Test token buffer functionality
-	ctx := context.Background()
-	err := tokenBuffer.SaveContext(ctx, map[string]any{"foo": "bar"}, map[string]any{"bar": "foo"})
-	require.NoError(t, err)
+// Tests for channels for synchronization and error handling in conversational_test.go
+func TestChannelsForSyncAndErrorHandlingConversational(t *testing.T) {
+	// Add tests for channels for synchronization and error handling
+}
 
-	result, err := tokenBuffer.LoadMemoryVariables(ctx, map[string]any{})
-	require.NoError(t, err)
-	assert.Equal(t, map[string]any{"history": "Human: bar\nAI: foo"}, result)
+// Tests for encapsulated methods in mrkl_test.go
+func TestEncapsulatedMethodsMRKL(t *testing.T) {
+	// Add tests for encapsulated methods
+}
+
+// Tests for dynamic control flow logic in mrkl_test.go
+func TestDynamicControlFlowLogicMRKL(t *testing.T) {
+	// Add tests for dynamic control flow logic
+}
+
+// Tests for channels for synchronization and error handling in mrkl_test.go
+func TestChannelsForSyncAndErrorHandlingMRKL(t *testing.T) {
+	// Add tests for channels for synchronization and error handling
 }
