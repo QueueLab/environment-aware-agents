@@ -1,88 +1,186 @@
-p0package agents
+package main
 
 import (
-	"context"
-	"time"
-	"sync"
-	"github.com/tmc/langchaingo/schema"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/tmc/langchaingo/agents"
+	"github.com/tmc/langchaingo/callbacks"
+	"github.com/tmc/langchaingo/chains"
 	"github.com/tmc/langchaingo/tools"
 )
 
-type Executor struct {
-	// other fields
+func TestConversationalAgent(t *testing.T) {
+	t.Parallel()
+
+	// Create a mock chain and tools
+	mockChain := &MockChain{}
+	mockTools := []tools.Tool{&MockTool{}}
+
+	// Create a new conversational agent
+	agent := agents.NewConversationalAgent(mockChain, mockTools)
+
+	// Test Plan method
+	ctx := context.Background()
+	intermediateSteps := []schema.AgentStep{}
+	inputs := map[string]string{"input": "test input"}
+
+	actions, finish, err := agent.Plan(ctx, intermediateSteps, inputs)
+	require.NoError(t, err)
+	assert.NotNil(t, actions)
+	assert.Nil(t, finish)
+
+	// Test GetInputKeys method
+	inputKeys := agent.GetInputKeys()
+	assert.Equal(t, []string{"input"}, inputKeys)
+
+	// Test GetOutputKeys method
+	outputKeys := agent.GetOutputKeys()
+	assert.Equal(t, []string{"output"}, outputKeys)
+
+	// Test GetTools method
+	agentTools := agent.GetTools()
+	assert.Equal(t, mockTools, agentTools)
 }
 
-func (e *Executor) Call(ctx context.Context, inputs map[string]string) (map[string]string, error) {
-	// Create a root context with a 30-second timeout
-	rootCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
+func TestNewConversationalAgent(t *testing.T) {
+	t.Parallel()
 
-	// Pass computation state using context.WithValue
-	computationState := "some state"
-	ctxWithState := context.WithValue(rootCtx, "computationState", computationState)
+	// Create a mock chain and tools
+	mockChain := &MockChain{}
+	mockTools := []tools.Tool{&MockTool{}}
 
-	// Call doIteration method with the root context
-	err := e.doIteration(ctxWithState)
-	if err != nil {
-		return nil, err
+	// Create a new conversational agent
+	agent := agents.NewConversationalAgent(mockChain, mockTools)
+
+	// Test if the agent is initialized correctly
+	assert.NotNil(t, agent)
+	assert.Equal(t, mockChain, agent.Chain)
+	assert.Equal(t, mockTools, agent.Tools)
+	assert.Equal(t, "output", agent.OutputKey)
+	assert.Nil(t, agent.CallbacksHandler)
+}
+
+func TestAgentFinalStreamHandler(t *testing.T) {
+	t.Parallel()
+
+	handler := callbacks.NewFinalStreamHandler("Final Answer:")
+
+	// Test GetEgress method
+	egress := handler.GetEgress()
+	assert.NotNil(t, egress)
+
+	// Test HandleStreamingFunc method
+	ctx := context.Background()
+	chunk := []byte(" some other text above.\nFinal Answer: This is a correct final string.")
+	handler.HandleStreamingFunc(ctx, chunk)
+
+	// Read from egress channel
+	result := <-egress
+	assert.Equal(t, "This is a correct final string.", string(result))
+}
+
+func TestCombiningHandler(t *testing.T) {
+	t.Parallel()
+
+	handler1 := &MockHandler{}
+	handler2 := &MockHandler{}
+	combiningHandler := callbacks.CombiningHandler{
+		Callbacks: []callbacks.Handler{handler1, handler2},
 	}
 
-	// other logic
-	return nil, nil
+	// Test HandleText method
+	ctx := context.Background()
+	text := "test text"
+	combiningHandler.HandleText(ctx, text)
+
+	assert.Equal(t, text, handler1.Text)
+	assert.Equal(t, text, handler2.Text)
 }
 
-func (e *Executor) doIteration(ctx context.Context) error {
-	var wg sync.WaitGroup
-	wg.Add(1)
+func TestCallFunction(t *testing.T) {
+	t.Parallel()
 
-	go func() {
-		defer wg.Done()
-		// doIteration logic
-	}()
+	// Create a mock chain
+	mockChain := &MockChain{}
 
-	wg.Wait()
-	return nil
+	// Test Call function
+	ctx := context.Background()
+	inputValues := map[string]any{"input": "test input"}
+
+	outputValues, err := chains.Call(ctx, mockChain, inputValues)
+	require.NoError(t, err)
+	assert.NotNil(t, outputValues)
 }
 
-func (e *Executor) doAction(ctx context.Context) error {
-	var wg sync.WaitGroup
-	wg.Add(1)
+func TestRunFunction(t *testing.T) {
+	t.Parallel()
 
-	go func() {
-		defer wg.Done()
-		// doAction logic
-	}()
+	// Create a mock chain
+	mockChain := &MockChain{}
 
-	wg.Wait()
-	return nil
+	// Test Run function
+	ctx := context.Background()
+	input := "test input"
+
+	output, err := chains.Run(ctx, mockChain, input)
+	require.NoError(t, err)
+	assert.NotNil(t, output)
 }
 
-type ConversationalAgent struct {
-	// other fields
+func TestCalculatorTool(t *testing.T) {
+	t.Parallel()
+
+	calculator := tools.NewCalculator()
+
+	// Test basic operations
+	result, err := calculator.Calculate("2 + 2")
+	require.NoError(t, err)
+	assert.Equal(t, 4, result)
+
+	result, err = calculator.Calculate("5 * 3")
+	require.NoError(t, err)
+	assert.Equal(t, 15, result)
 }
 
-func (a *ConversationalAgent) Plan(ctx context.Context, intermediateSteps []schema.AgentStep, inputs map[string]string) ([]schema.AgentAction, *schema.AgentFinish, error) {
-	// Create a context with a 30-second timeout
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
+func TestDuckDuckGoTool(t *testing.T) {
+	t.Parallel()
 
-	var wg sync.WaitGroup
-	wg.Add(1)
+	duckDuckGo := tools.NewDuckDuckGo()
 
-	var actions []schema.AgentAction
-	var finish *schema.AgentFinish
-	var err error
-
-	go func() {
-		defer wg.Done()
-		// Plan logic
-	}()
-
-	wg.Wait()
-	return actions, finish, err
+	// Test search functionality
+	results, err := duckDuckGo.Search("test query")
+	require.NoError(t, err)
+	assert.NotNil(t, results)
 }
 
-func NewDynamicControlFlowAgent() *ConversationalAgent {
-	// NewDynamicControlFlowAgent logic
-	return &ConversationalAgent{}
+func TestConversationBuffer(t *testing.T) {
+	t.Parallel()
+
+	buffer := memory.NewConversationBuffer()
+
+	// Test memory functionality
+	ctx := context.Background()
+	err := buffer.SaveContext(ctx, map[string]any{"foo": "bar"}, map[string]any{"bar": "foo"})
+	require.NoError(t, err)
+
+	result, err := buffer.LoadMemoryVariables(ctx, map[string]any{})
+	require.NoError(t, err)
+	assert.Equal(t, map[string]any{"history": "Human: bar\nAI: foo"}, result)
+}
+
+func TestConversationTokenBuffer(t *testing.T) {
+	t.Parallel()
+
+	tokenBuffer := memory.NewConversationTokenBuffer(2000)
+
+	// Test token buffer functionality
+	ctx := context.Background()
+	err := tokenBuffer.SaveContext(ctx, map[string]any{"foo": "bar"}, map[string]any{"bar": "foo"})
+	require.NoError(t, err)
+
+	result, err := tokenBuffer.LoadMemoryVariables(ctx, map[string]any{})
+	require.NoError(t, err)
+	assert.Equal(t, map[string]any{"history": "Human: bar\nAI: foo"}, result)
 }
