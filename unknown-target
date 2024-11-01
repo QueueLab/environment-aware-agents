@@ -1,0 +1,88 @@
+p0package agents
+
+import (
+	"context"
+	"time"
+	"sync"
+	"github.com/tmc/langchaingo/schema"
+	"github.com/tmc/langchaingo/tools"
+)
+
+type Executor struct {
+	// other fields
+}
+
+func (e *Executor) Call(ctx context.Context, inputs map[string]string) (map[string]string, error) {
+	// Create a root context with a 30-second timeout
+	rootCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	// Pass computation state using context.WithValue
+	computationState := "some state"
+	ctxWithState := context.WithValue(rootCtx, "computationState", computationState)
+
+	// Call doIteration method with the root context
+	err := e.doIteration(ctxWithState)
+	if err != nil {
+		return nil, err
+	}
+
+	// other logic
+	return nil, nil
+}
+
+func (e *Executor) doIteration(ctx context.Context) error {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		// doIteration logic
+	}()
+
+	wg.Wait()
+	return nil
+}
+
+func (e *Executor) doAction(ctx context.Context) error {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		// doAction logic
+	}()
+
+	wg.Wait()
+	return nil
+}
+
+type ConversationalAgent struct {
+	// other fields
+}
+
+func (a *ConversationalAgent) Plan(ctx context.Context, intermediateSteps []schema.AgentStep, inputs map[string]string) ([]schema.AgentAction, *schema.AgentFinish, error) {
+	// Create a context with a 30-second timeout
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	var actions []schema.AgentAction
+	var finish *schema.AgentFinish
+	var err error
+
+	go func() {
+		defer wg.Done()
+		// Plan logic
+	}()
+
+	wg.Wait()
+	return actions, finish, err
+}
+
+func NewDynamicControlFlowAgent() *ConversationalAgent {
+	// NewDynamicControlFlowAgent logic
+	return &ConversationalAgent{}
+}
