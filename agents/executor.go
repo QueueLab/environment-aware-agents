@@ -56,7 +56,7 @@ func (e *Executor) Call(ctx context.Context, inputValues map[string]any, _ ...ch
 	nameToTool := getNameToTool(e.Agent.GetTools())
 
 	// Create a root context with a timeout
-	rootCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+ rootCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	// Pass relevant computation state using context.WithValue
