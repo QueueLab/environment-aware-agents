@@ -147,6 +147,16 @@ func (e *Executor) doAction(
 		return nil, err
 	}
 
+	// Handle dynamic control flow
+	if strings.Contains(observation, "dynamic_control_flow") {
+		// Extract the next tool to call from the observation
+		nextTool := extractNextTool(observation)
+		if nextTool != "" {
+			action.Tool = nextTool
+			return e.doAction(ctx, steps, nameToTool, action)
+		}
+	}
+
 	return append(steps, schema.AgentStep{
 		Action:      action,
 		Observation: observation,
@@ -205,4 +215,17 @@ func getNameToTool(t []tools.Tool) map[string]tools.Tool {
 	}
 
 	return nameToTool
+}
+
+// extractNextTool is a helper function to extract the next tool to call from the observation.
+func extractNextTool(observation string) string {
+	// Implement the logic to extract the next tool from the observation.
+	// This is a placeholder implementation and should be replaced with actual logic.
+	if strings.Contains(observation, "next_tool:") {
+		parts := strings.Split(observation, "next_tool:")
+		if len(parts) > 1 {
+			return strings.TrimSpace(parts[1])
+		}
+	}
+	return ""
 }

@@ -3,6 +3,7 @@ package agents
 import (
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/tools"
+	"github.com/QueueLab/Environment-Aware-Agents/graph_orchestration"
 )
 
 const _defaultMaxIterations = 5
@@ -17,6 +18,9 @@ const (
 	// ConversationalReactDescription is an AgentType constant that represents
 	// the "conversationalReactDescription" agent type.
 	ConversationalReactDescription AgentType = "conversationalReactDescription"
+	// GraphOrchestration is an AgentType constant that represents
+	// the "graphOrchestration" agent type.
+	GraphOrchestration AgentType = "graphOrchestration"
 )
 
 // Deprecated: This may be removed in the future; please use NewExecutor instead.
@@ -35,8 +39,25 @@ func Initialize(
 		agent = NewOneShotAgent(llm, tools, opts...)
 	case ConversationalReactDescription:
 		agent = NewConversationalAgent(llm, tools, opts...)
+	case GraphOrchestration:
+		agent = graph_orchestration.NewGraphAgent(llm, tools, opts...)
 	default:
 		return &Executor{}, ErrUnknownAgentType
 	}
 	return NewExecutor(agent, opts...), nil
+}
+
+// NewDynamicControlFlowAgent initializes an agent with dynamic control flow capabilities.
+func NewDynamicControlFlowAgent(
+    llm llms.Model,
+    tools []tools.Tool,
+    opts ...Option,
+) (*Executor, error) {
+    for _, tool := range tools {
+        if _, ok := tool.(DynamicControlFlowTool); !ok {
+            return nil, fmt.Errorf("tool %s does not support dynamic control flow", tool.Name())
+        }
+    }
+    agent := NewOneShotAgent(llm, tools, opts...)
+    return NewExecutor(agent, opts...), nil
 }

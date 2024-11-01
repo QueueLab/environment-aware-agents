@@ -96,6 +96,25 @@ func (a *ConversationalAgent) Plan(
 		return nil, nil, err
 	}
 
+ if action, ok := handleDynamicControlFlow(output); ok {
+     return []schema.AgentAction{action}, nil, nil
+ }
+
+ // ... (elsewhere in the file)
+ func handleDynamicControlFlow(output string) (schema.AgentAction, bool) {
+     if strings.Contains(output, "dynamic_control_flow") {
+         nextTool := extractNextTool(output)
+         if nextTool != "" {
+             return schema.AgentAction{
+                 Tool:      nextTool,
+                 ToolInput: "",
+                 Log:       output,
+             }, true
+         }
+     }
+     return schema.AgentAction{}, false
+ }
+
 	return a.parseOutput(output)
 }
 
@@ -155,6 +174,20 @@ func (a *ConversationalAgent) parseOutput(output string) ([]schema.AgentAction, 
 		return nil, nil, fmt.Errorf("%w: %s", ErrUnableToParseOutput, output)
 	}
 
+	// Handle dynamic control flow
+	if strings.Contains(output, "dynamic_control_flow") {
+		// Extract the next tool to call from the output
+		nextTool := extractNextTool(output)
+		if nextTool != "" {
+			action := schema.AgentAction{
+				Tool:      nextTool,
+				ToolInput: "", // You may need to set the appropriate input for the next tool
+				Log:       output,
+			}
+			return []schema.AgentAction{action}, nil, nil
+		}
+	}
+
 	return []schema.AgentAction{
 		{Tool: strings.TrimSpace(matches[1]), ToolInput: strings.TrimSpace(matches[2]), Log: output},
 	}, nil, nil
@@ -182,4 +215,17 @@ func createConversationalPrompt(tools []tools.Tool, prefix, instructions, suffix
 			"history":           "",
 		},
 	}
+}
+
+// extractNextTool is a helper function to extract the next tool to call from the output.
+func extractNextTool(output string) string {
+	// Implement the logic to extract the next tool from the output.
+	// This is a placeholder implementation and should be replaced with actual logic.
+	if strings.Contains(output, "next_tool:") {
+		parts := strings.Split(output, "next_tool:")
+		if len(parts) > 1 {
+			return strings.TrimSpace(parts[1])
+		}
+	}
+	return ""
 }
