@@ -11,13 +11,24 @@ func batchRequests(ctx context.Context, requests []string) {
 	var batch []string
 	tokenLimit := 100 // Simulated context window token limit
 
-	for _, req := range requests {
-		batch = append(batch, req)
-		if len(batch) >= tokenLimit {
-			processBatch(ctx, batch) // Send batch to LLM for processing
-			batch = nil              // Reset batch
-		}
-	}
+ batchChan := make(chan []string, 10) // Buffered channel for concurrent processing
+ go func() {
+     for _, req := range requests {
+         batch = append(batch, req)
+         if len(batch) >= tokenLimit {
+             batchChan <- batch
+             batch = nil
+         }
+     }
+     if len(batch) > 0 {
+         batchChan <- batch
+     }
+     close(batchChan)
+ }()
+
+ for batch := range batchChan {
+     go processBatch(ctx, batch)
+ }
 	if len(batch) > 0 {
 		processBatch(ctx, batch) // Process any remaining tasks
 	}
