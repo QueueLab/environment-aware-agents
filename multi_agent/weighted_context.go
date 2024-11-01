@@ -14,7 +14,8 @@ type TaskWeight struct {
 
 // weightedContext creates a custom context to carry priority information
 func weightedContext(ctx context.Context, weight TaskWeight) context.Context {
-	return context.WithValue(ctx, "weight", weight)
+ type weightKey struct{}
+ return context.WithValue(ctx, weightKey{}, weight)
 }
 
 // agentTask simulates a task that checks for context cancellation and prioritization
