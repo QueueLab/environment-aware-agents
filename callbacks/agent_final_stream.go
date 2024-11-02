@@ -3,6 +3,7 @@ package callbacks
 import (
 	"context"
 	"strings"
+	"github.com/QueueLab/Environment-Aware-Agents/token_tracking"
 )
 
 // DefaultKeywords is map of the agents final out prefix keywords.
@@ -17,6 +18,7 @@ type AgentFinalStreamHandler struct {
 	LastTokens      string
 	KeywordDetected bool
 	PrintOutput     bool
+	TokenTracker    *token_tracking.TokenTracker
 }
 
 var _ Handler = &AgentFinalStreamHandler{}
@@ -35,8 +37,9 @@ func NewFinalStreamHandler(keywords ...string) *AgentFinalStreamHandler {
 	}
 
 	return &AgentFinalStreamHandler{
-		egress:   make(chan []byte),
-		Keywords: DefaultKeywords,
+		egress:       make(chan []byte),
+		Keywords:     DefaultKeywords,
+		TokenTracker: token_tracking.NewTokenTracker(),
 	}
 }
 
@@ -109,6 +112,10 @@ func (handler *AgentFinalStreamHandler) HandleStreamingFunc(_ context.Context, c
 	if handler.PrintOutput {
 		handler.egress <- chunk
 	}
+
+	// Log token usage and cost
+	handler.TokenTracker.LogTokenUsage(len(chunk))
+	handler.TokenTracker.LogCost(len(chunk))
 }
 
 func filterFinalString(chunkStr, keyword string) string {

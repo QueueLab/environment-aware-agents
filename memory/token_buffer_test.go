@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
+	"github.com/QueueLab/Environment-Aware-Agents/token_tracking"
 )
 
 func TestTokenBufferMemory(t *testing.T) {
@@ -35,6 +36,12 @@ func TestTokenBufferMemory(t *testing.T) {
 
 	expected2 := map[string]any{"history": "Human: bar\nAI: foo"}
 	assert.Equal(t, expected2, result2)
+
+	// Verify token tracking and cost calculation
+	tokenUsage := m.TokenTracker.GetTokenUsage()
+	cost := m.TokenTracker.GetCost()
+	assert.Greater(t, tokenUsage, 0)
+	assert.Greater(t, cost, 0.0)
 }
 
 func TestTokenBufferMemoryReturnMessage(t *testing.T) {
@@ -70,6 +77,12 @@ func TestTokenBufferMemoryReturnMessage(t *testing.T) {
 	require.NoError(t, err)
 	expected2 := map[string]any{"history": messages}
 	assert.Equal(t, expected2, result2)
+
+	// Verify token tracking and cost calculation
+	tokenUsage := m.TokenTracker.GetTokenUsage()
+	cost := m.TokenTracker.GetCost()
+	assert.Greater(t, tokenUsage, 0)
+	assert.Greater(t, cost, 0.0)
 }
 
 func TestTokenBufferMemoryWithPreLoadedHistory(t *testing.T) {
@@ -93,4 +106,10 @@ func TestTokenBufferMemoryWithPreLoadedHistory(t *testing.T) {
 	require.NoError(t, err)
 	expected := map[string]any{"history": "Human: bar\nAI: foo"}
 	assert.Equal(t, expected, result)
+
+	// Verify token tracking and cost calculation
+	tokenUsage := m.TokenTracker.GetTokenUsage()
+	cost := m.TokenTracker.GetCost()
+	assert.Greater(t, tokenUsage, 0)
+	assert.Greater(t, cost, 0.0)
 }
