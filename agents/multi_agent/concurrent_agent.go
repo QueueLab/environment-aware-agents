@@ -2,7 +2,6 @@ package multi_agent
 
 import (
 	"context"
-	"sync"
 
 	"github.com/tmc/langchaingo/agents"
 	"github.com/tmc/langchaingo/schema"
@@ -60,8 +59,10 @@ func (a *ConcurrentAgent) GetTools() []tools.Tool {
 func (a *ConcurrentAgent) InitializeConcurrentActions(actions []schema.AgentAction) {
 	for _, action := range actions {
 		node := &Node{
-			ID:    len(a.Graph.Nodes),
-			Value: action,
+			ID:      len(a.Graph.Nodes),
+			Value:   action,
+			State:   "initialized",
+			Actions: []interface{}{action},
 		}
 		a.Graph.AddNode(node)
 	}
@@ -69,5 +70,16 @@ func (a *ConcurrentAgent) InitializeConcurrentActions(actions []schema.AgentActi
 
 // ExecuteConcurrentActions executes the concurrent actions for the agent.
 func (a *ConcurrentAgent) ExecuteConcurrentActions() {
+	for _, node := range a.Graph.Nodes {
+		go func(n *Node) {
+			for _, action := range n.Actions {
+				// Implement the logic for self-reflecting or human-in-the-loop tasks.
+				// This is a placeholder implementation.
+				n.State = "executing"
+				// Simulate action execution
+				n.State = "completed"
+			}
+		}(node)
+	}
 	a.Graph.Execute()
 }
