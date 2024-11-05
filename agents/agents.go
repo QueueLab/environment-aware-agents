@@ -16,3 +16,10 @@ type Agent interface {
 	GetOutputKeys() []string
 	GetTools() []tools.Tool
 }
+
+// ConcurrentAgent is an interface that extends the Agent interface with concurrency methods.
+type ConcurrentAgent interface {
+	Agent
+	InitializeConcurrentActions(actions []schema.AgentAction)
+	ExecuteConcurrentActions()
+}
