@@ -10,6 +10,7 @@ type Node struct {
 	Value   interface{}
 	State   string
 	Actions []interface{}
+	mu      sync.Mutex
 }
 
 // Edge represents an edge in the graph.
