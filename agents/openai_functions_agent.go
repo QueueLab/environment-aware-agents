@@ -78,6 +78,10 @@ func (o *OpenAIFunctionsAgent) Plan(
 	}
 	fullInputs[agentScratchpad] = o.constructScratchPad(intermediateSteps)
 
+	// Use context.WithValue to pass state
+	ctx = context.WithValue(ctx, "intermediateSteps", intermediateSteps)
+	ctx = context.WithValue(ctx, "inputs", inputs)
+
 	var stream func(ctx context.Context, chunk []byte) error
 
 	if o.CallbacksHandler != nil {
@@ -147,7 +151,6 @@ func (o *OpenAIFunctionsAgent) GetInputKeys() []string {
 		if v == agentScratchpad {
 			continue
 		}
-		agentInput = append(agentInput, v)
 	}
 
 	return agentInput

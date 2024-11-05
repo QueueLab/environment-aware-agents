@@ -95,6 +95,8 @@ func (a *ConcurrentAgent) AddWeightedContext(actions []schema.AgentAction, prior
 			From: node,
 			To:   nil,
 			Action: func() {
+				// Use context.WithValue to pass state
+				ctx := context.WithValue(context.Background(), "action", action)
 				// Implement the action based on priority
 				switch priority {
 				case CriticalPriority:
@@ -106,6 +108,8 @@ func (a *ConcurrentAgent) AddWeightedContext(actions []schema.AgentAction, prior
 				case LowPriority:
 					// Allocate low resources
 				}
+				// Use the context value
+				_ = ctx.Value("action")
 			},
 		})
 	}
