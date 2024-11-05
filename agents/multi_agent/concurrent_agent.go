@@ -2,7 +2,6 @@ package multi_agent
 
 import (
 	"context"
-	"sync"
 
 	"github.com/tmc/langchaingo/agents"
 	"github.com/tmc/langchaingo/schema"
