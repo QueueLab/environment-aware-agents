@@ -73,6 +73,10 @@ func (a *OneShotZeroAgent) Plan(
 	fullInputs["agent_scratchpad"] = constructScratchPad(intermediateSteps)
 	fullInputs["today"] = time.Now().Format("January 02, 2006")
 
+	// Use context.WithValue to pass state
+	ctx = context.WithValue(ctx, "intermediateSteps", intermediateSteps)
+	ctx = context.WithValue(ctx, "inputs", inputs)
+
 	var stream func(ctx context.Context, chunk []byte) error
 
 	if a.CallbacksHandler != nil {

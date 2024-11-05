@@ -110,6 +110,8 @@ func (e *Executor) callConcurrent(
 		wg.Add(1)
 		go func(action schema.AgentAction) {
 			defer wg.Done()
+			 // Use context.WithValue to pass state between concurrent actions
+			ctx = context.WithValue(ctx, "action", action)
 			steps, err := e.doAction(ctx, steps, nameToTool, action)
 			if err != nil {
 				mu.Lock()

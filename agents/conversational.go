@@ -71,6 +71,10 @@ func (a *ConversationalAgent) Plan(
 
 	fullInputs["agent_scratchpad"] = constructScratchPad(intermediateSteps)
 
+	// Use context.WithValue to pass state
+	ctx = context.WithValue(ctx, "intermediateSteps", intermediateSteps)
+	ctx = context.WithValue(ctx, "inputs", inputs)
+
 	var stream func(ctx context.Context, chunk []byte) error
 
 	if a.CallbacksHandler != nil {
