@@ -3,6 +3,7 @@ package agents
 import (
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/tools"
+	"github.com/tmc/langchaingo/agents/multi_agent"
 )
 
 const _defaultMaxIterations = 5
@@ -17,6 +18,9 @@ const (
 	// ConversationalReactDescription is an AgentType constant that represents
 	// the "conversationalReactDescription" agent type.
 	ConversationalReactDescription AgentType = "conversationalReactDescription"
+	// ConcurrentAgentDescription is an AgentType constant that represents
+	// the "concurrentAgentDescription" agent type.
+	ConcurrentAgentDescription AgentType = "concurrentAgentDescription"
 )
 
 // Deprecated: This may be removed in the future; please use NewExecutor instead.
@@ -35,6 +39,8 @@ func Initialize(
 		agent = NewOneShotAgent(llm, tools, opts...)
 	case ConversationalReactDescription:
 		agent = NewConversationalAgent(llm, tools, opts...)
+	case ConcurrentAgentDescription:
+		agent = multi_agent.NewConcurrentAgent()
 	default:
 		return &Executor{}, ErrUnknownAgentType
 	}

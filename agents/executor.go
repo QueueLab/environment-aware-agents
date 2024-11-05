@@ -99,6 +99,10 @@ func (e *Executor) callConcurrent(
 		return e.getReturn(finish, steps), nil
 	}
 
+	// Add context orchestration logic here
+	priorities := []int{CriticalPriority, HighPriority, MediumPriority, LowPriority} // Example priorities
+	concurrentAgent.AddWeightedContext(actions, priorities)
+
 	concurrentAgent.InitializeConcurrentActions(actions)
 	concurrentAgent.ExecuteConcurrentActions()
 

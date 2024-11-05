@@ -124,3 +124,8 @@ func filterFinalString(chunkStr, keyword string) string {
 
 	return strings.TrimLeft(chunkStr, " ")
 }
+
+// Add context orchestration logic to handle streaming
+func (handler *AgentFinalStreamHandler) OrchestrateContext(ctx context.Context, chunk []byte) {
+	handler.HandleStreamingFunc(ctx, chunk)
+}
