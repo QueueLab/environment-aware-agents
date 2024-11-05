@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/chains"
@@ -55,6 +56,10 @@ func (e *Executor) Call(ctx context.Context, inputValues map[string]any, _ ...ch
 	nameToTool := getNameToTool(e.Agent.GetTools())
 
 	steps := make([]schema.AgentStep, 0)
+	if concurrentAgent, ok := e.Agent.(ConcurrentAgent); ok {
+		return e.callConcurrent(ctx, concurrentAgent, steps, nameToTool, inputs)
+	}
+
 	for i := 0; i < e.MaxIterations; i++ {
 		var finish map[string]any
 		steps, finish, err = e.doIteration(ctx, steps, nameToTool, inputs)
@@ -72,6 +77,50 @@ func (e *Executor) Call(ctx context.Context, inputValues map[string]any, _ ...ch
 		&schema.AgentFinish{ReturnValues: make(map[string]any)},
 		steps,
 	), ErrNotFinished
+}
+
+func (e *Executor) callConcurrent(
+	ctx context.Context,
+	concurrentAgent ConcurrentAgent,
+	steps []schema.AgentStep,
+	nameToTool map[string]tools.Tool,
+	inputs map[string]string,
+) (map[string]any, error) {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var finalResult map[string]any
+	var finalError error
+
+	actions, finish, err := concurrentAgent.Plan(ctx, steps, inputs)
+	if err != nil {
+		return nil, err
+	}
+	if finish != nil {
+		return e.getReturn(finish, steps), nil
+	}
+
+	concurrentAgent.InitializeConcurrentActions(actions)
+	concurrentAgent.ExecuteConcurrentActions()
+
+	for _, action := range actions {
+		wg.Add(1)
+		go func(action schema.AgentAction) {
+			defer wg.Done()
+			steps, err := e.doAction(ctx, steps, nameToTool, action)
+			if err != nil {
+				mu.Lock()
+				finalError = err
+				mu.Unlock()
+				return
+			}
+			mu.Lock()
+			finalResult = e.getReturn(&schema.AgentFinish{ReturnValues: make(map[string]any)}, steps)
+			mu.Unlock()
+		}(action)
+	}
+
+	wg.Wait()
+	return finalResult, finalError
 }
 
 func (e *Executor) doIteration( // nolint
