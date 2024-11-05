@@ -6,8 +6,10 @@ import (
 
 // Node represents a node in the graph.
 type Node struct {
-	ID    int
-	Value interface{}
+	ID      int
+	Value   interface{}
+	State   string
+	Actions []interface{}
 }
 
 // Edge represents an edge in the graph.
@@ -36,6 +38,8 @@ func NewGraph() *Graph {
 func (g *Graph) AddNode(node *Node) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+	node.State = "initialized"
+	node.Actions = []interface{}{}
 	g.Nodes = append(g.Nodes, node)
 }
 

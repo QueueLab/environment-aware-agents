@@ -62,6 +62,8 @@ func (a *ConcurrentAgent) InitializeConcurrentActions(actions []schema.AgentActi
 		node := &Node{
 			ID:    len(a.Graph.Nodes),
 			Value: action,
+			State: "initialized",
+			Actions: []schema.AgentAction{action},
 		}
 		a.Graph.AddNode(node)
 	}
@@ -69,5 +71,16 @@ func (a *ConcurrentAgent) InitializeConcurrentActions(actions []schema.AgentActi
 
 // ExecuteConcurrentActions executes the concurrent actions for the agent.
 func (a *ConcurrentAgent) ExecuteConcurrentActions() {
+	for _, node := range a.Graph.Nodes {
+		go func(n *Node) {
+			for _, action := range n.Actions {
+				// Implement the logic for self-reflecting or human-in-the-loop tasks.
+				// This is a placeholder implementation.
+				n.State = "executing"
+				// Simulate action execution
+				n.State = "completed"
+			}
+		}(node)
+	}
 	a.Graph.Execute()
 }
