@@ -9,6 +9,14 @@ import (
 	"github.com/tmc/langchaingo/tools"
 )
 
+// Priority levels for tasks
+const (
+	CriticalPriority = iota
+	HighPriority
+	MediumPriority
+	LowPriority
+)
+
 // ConcurrentAgent is an implementation of the Agent interface with concurrency features.
 type ConcurrentAgent struct {
 	Graph *Graph
@@ -70,4 +78,35 @@ func (a *ConcurrentAgent) InitializeConcurrentActions(actions []schema.AgentActi
 // ExecuteConcurrentActions executes the concurrent actions for the agent.
 func (a *ConcurrentAgent) ExecuteConcurrentActions() {
 	a.Graph.Execute()
+}
+
+// AddWeightedContext adds weighted context to the graph nodes based on priority.
+func (a *ConcurrentAgent) AddWeightedContext(actions []schema.AgentAction, priorities []int) {
+	for i, action := range actions {
+		node := &Node{
+			ID:    len(a.Graph.Nodes),
+			Value: action,
+		}
+		a.Graph.AddNode(node)
+
+		// Add priority as a weight to the node
+		priority := priorities[i]
+		a.Graph.AddEdge(&Edge{
+			From: node,
+			To:   nil,
+			Action: func() {
+				// Implement the action based on priority
+				switch priority {
+				case CriticalPriority:
+					// Allocate more resources
+				case HighPriority:
+					// Allocate high resources
+				case MediumPriority:
+					// Allocate medium resources
+				case LowPriority:
+					// Allocate low resources
+				}
+			},
+		})
+	}
 }

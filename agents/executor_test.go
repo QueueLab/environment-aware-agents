@@ -141,3 +141,26 @@ func TestExecutorWithOpenAIFunctionAgent(t *testing.T) {
 	require.True(t, strings.Contains(result, "47") || strings.Contains(result, "49"),
 		"correct answer 47 or 49 not in response")
 }
+
+func TestAddWeightedContext(t *testing.T) {
+	t.Parallel()
+
+	// Create a ConcurrentAgent
+	agent := agents.NewConcurrentAgent()
+
+	// Define actions and priorities
+	actions := []schema.AgentAction{
+		{Tool: "Tool1", ToolInput: "Input1"},
+		{Tool: "Tool2", ToolInput: "Input2"},
+		{Tool: "Tool3", ToolInput: "Input3"},
+	}
+	priorities := []int{agents.CriticalPriority, agents.HighPriority, agents.LowPriority}
+
+	// Add weighted context to the agent
+	agent.AddWeightedContext(actions, priorities)
+
+	// Verify that the graph nodes have the correct priorities
+	for i, node := range agent.Graph.Nodes {
+		require.Equal(t, priorities[i], node.Priority)
+	}
+}

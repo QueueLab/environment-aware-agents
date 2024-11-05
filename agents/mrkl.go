@@ -141,3 +141,10 @@ func (a *OneShotZeroAgent) parseOutput(output string) ([]schema.AgentAction, *sc
 		{Tool: strings.TrimSpace(matches[1]), ToolInput: strings.TrimSpace(matches[2]), Log: output},
 	}, nil, nil
 }
+
+// Implement context orchestration for efficient LLM context sharing
+func (a *OneShotZeroAgent) OrchestrateContext(ctx context.Context, steps []schema.AgentStep, inputs map[string]string) ([]schema.AgentAction, *schema.AgentFinish, error) {
+	// Implement the logic for context orchestration
+	// This is a placeholder implementation
+	return a.Plan(ctx, steps, inputs)
+}
