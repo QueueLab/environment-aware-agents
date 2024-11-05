@@ -1,171 +1,72 @@
-package agents
+package token_tracking
 
 import (
-	"context"
+	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 )
 
-// Call method in executor.go
-func (e *Executor) Call() {
-	// Create a root context with a 30-second timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// Pass the root context to doIteration
-	e.doIteration(ctx)
+type TokenTracker struct {
+	RunID       string
+	TokenUsage  int
+	UnitCost    float64
+	LogFilePath string
 }
 
-// doIteration method in executor.go
-func (e *Executor) doIteration(ctx context.Context) {
-	// Encapsulate doIteration in a Go routine
-	go func() {
-		// Use channels for synchronization and error handling
-		done := make(chan struct{})
-		errCh := make(chan error)
+func NewTokenTracker(runID string, unitCost float64) (*TokenTracker, error) {
+	tracker := &TokenTracker{
+		RunID:    runID,
+		UnitCost: unitCost,
+	}
 
-		go func() {
-			defer close(done)
-			// Perform iteration logic here
-			// If an error occurs, send it to errCh
-			// errCh <- err
-		}()
+	err := tracker.initializeLogFile()
+	if err != nil {
+		return nil, err
+	}
 
-		select {
-		case <-ctx.Done():
-			// Handle context timeout or cancellation
-		case err := <-errCh:
-			// Handle error
-		case <-done:
-			// Iteration completed successfully
-		}
-	}()
+	return tracker, nil
 }
 
-// doAction method in executor.go
-func (e *Executor) doAction() {
-	// Encapsulate doAction in a Go routine
-	go func() {
-		// Use channels for synchronization and error handling
-		done := make(chan struct{})
-		errCh := make(chan error)
+func (t *TokenTracker) initializeLogFile() error {
+	dir := filepath.Join("token_tracking", t.RunID)
+	err := os.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
 
-		go func() {
-			defer close(done)
-			// Perform action logic here
-			// If an error occurs, send it to errCh
-			// errCh <- err
-		}()
+	t.LogFilePath = filepath.Join(dir, "token_usage.log")
+	file, err := os.Create(t.LogFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to create log file: %w", err)
+	}
+	defer file.Close()
 
-		select {
-		case err := <-errCh:
-			// Handle error
-		case <-done:
-			// Action completed successfully
-		}
-	}()
+	return nil
 }
 
-// Plan method in conversational.go
-func (c *Conversational) Plan() {
-	// Use context.WithTimeout in the Plan method to manage task execution time
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// Encapsulate Plan method in a Go routine
-	go func() {
-		// Use channels for synchronization and error handling
-		done := make(chan struct{})
-		errCh := make(chan error)
-
-		go func() {
-			defer close(done)
-			// Perform planning logic here
-			// If an error occurs, send it to errCh
-			// errCh <- err
-		}()
-
-		select {
-		case <-ctx.Done():
-			// Handle context timeout or cancellation
-		case err := <-errCh:
-			// Handle error
-		case <-done:
-			// Planning completed successfully
-		}
-	}()
+func (t *TokenTracker) LogTokenUsage(tokens int) error {
+	t.TokenUsage += tokens
+	return t.logToFile(fmt.Sprintf("Tokens used: %d", tokens))
 }
 
-// Plan method in mrkl.go
-func (m *MRKL) Plan() {
-	// Encapsulate Plan method in a Go routine
-	go func() {
-		// Use channels for synchronization and error handling
-		done := make(chan struct{})
-		errCh := make(chan error)
-
-		go func() {
-			defer close(done)
-			// Perform planning logic here
-			// If an error occurs, send it to errCh
-			// errCh <- err
-		}()
-
-		select {
-		case err := <-errCh:
-			// Handle error
-		case <-done:
-			// Planning completed successfully
-		}
-	}()
+func (t *TokenTracker) LogCost() error {
+	cost := float64(t.TokenUsage) * t.UnitCost
+	return t.logToFile(fmt.Sprintf("Total cost: %.2f", cost))
 }
 
-// NewDynamicControlFlowAgent function in initialize.go
-func NewDynamicControlFlowAgent() *DynamicControlFlowAgent {
-	// Implement dynamic control flow capabilities
-	return &DynamicControlFlowAgent{}
-}
+func (t *TokenTracker) logToFile(message string) error {
+	file, err := os.OpenFile(t.LogFilePath, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	if err != nil {
+		return fmt.Errorf("failed to open log file: %w", err)
+	}
+	defer file.Close()
 
-// Tests for encapsulated methods in executor_test.go
-func TestEncapsulatedMethods(t *testing.T) {
-	// Add tests for encapsulated methods
-}
+	logMessage := fmt.Sprintf("%s: %s\n", time.Now().Format(time.RFC3339), message)
+	_, err = file.WriteString(logMessage)
+	if err != nil {
+		return fmt.Errorf("failed to write to log file: %w", err)
+	}
 
-// Tests for dynamic control flow logic in executor_test.go
-func TestDynamicControlFlowLogic(t *testing.T) {
-	// Add tests for dynamic control flow logic
-}
-
-// Tests for channels for synchronization and error handling in executor_test.go
-func TestChannelsForSyncAndErrorHandling(t *testing.T) {
-	// Add tests for channels for synchronization and error handling
-}
-
-// Tests for encapsulated methods in conversational_test.go
-func TestEncapsulatedMethodsConversational(t *testing.T) {
-	// Add tests for encapsulated methods
-}
-
-// Tests for dynamic control flow logic in conversational_test.go
-func TestDynamicControlFlowLogicConversational(t *testing.T) {
-	// Add tests for dynamic control flow logic
-}
-
-// Tests for channels for synchronization and error handling in conversational_test.go
-func TestChannelsForSyncAndErrorHandlingConversational(t *testing.T) {
-	// Add tests for channels for synchronization and error handling
-}
-
-// Tests for encapsulated methods in mrkl_test.go
-func TestEncapsulatedMethodsMRKL(t *testing.T) {
-	// Add tests for encapsulated methods
-}
-
-// Tests for dynamic control flow logic in mrkl_test.go
-func TestDynamicControlFlowLogicMRKL(t *testing.T) {
-	// Add tests for dynamic control flow logic
-}
-
-// Tests for channels for synchronization and error handling in mrkl_test.go
-func TestChannelsForSyncAndErrorHandlingMRKL(t *testing.T) {
-	// Add tests for channels for synchronization and error handling
+	return nil
 }

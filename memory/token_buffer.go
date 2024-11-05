@@ -2,7 +2,7 @@ package memory
 
 import (
 	"context"
-
+	"github.com/QueueLab/Environment-Aware-Agents/token_tracking"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/schema"
 )
@@ -12,6 +12,7 @@ type ConversationTokenBuffer struct {
 	ConversationBuffer
 	LLM           llms.Model
 	MaxTokenLimit int
+	TokenTracker  *token_tracking.TokenTracker
 }
 
 // Statically assert that ConversationTokenBuffer implement the memory interface.
@@ -27,6 +28,7 @@ func NewConversationTokenBuffer(
 		LLM:                llm,
 		MaxTokenLimit:      maxTokenLimit,
 		ConversationBuffer: *applyBufferOptions(options...),
+		TokenTracker:       token_tracking.NewTokenTracker(),
 	}
 
 	return tb
@@ -56,6 +58,9 @@ func (tb *ConversationTokenBuffer) SaveContext(
 	if err != nil {
 		return err
 	}
+
+	tb.TokenTracker.LogTokenUsage(currBufferLength)
+	tb.TokenTracker.LogCost(currBufferLength)
 
 	if currBufferLength > tb.MaxTokenLimit {
 		// while currBufferLength is greater than MaxTokenLimit we keep removing messages from the memory
