@@ -34,21 +34,24 @@ func (a *ConcurrentAgent) Plan(
 ) ([]schema.AgentAction, *schema.AgentFinish, error) {
 	// Implement the logic to decide the next action or return the final result.
 	// This is a placeholder implementation.
-	return nil, nil, nil
+	if len(inputs) == 0 {
+		return nil, &schema.AgentFinish{ReturnValues: map[string]any{"output": "no input"}}, nil
+	}
+	return nil, &schema.AgentFinish{ReturnValues: map[string]any{"output": inputs["input"]}}, nil
 }
 
 // GetInputKeys returns the input keys for the agent.
 func (a *ConcurrentAgent) GetInputKeys() []string {
 	// Implement the logic to return the input keys.
 	// This is a placeholder implementation.
-	return []string{}
+	return []string{"input"}
 }
 
 // GetOutputKeys returns the output keys for the agent.
 func (a *ConcurrentAgent) GetOutputKeys() []string {
 	// Implement the logic to return the output keys.
 	// This is a placeholder implementation.
-	return []string{}
+	return []string{"output"}
 }
 
 // GetTools returns the tools available to the agent.
@@ -71,8 +74,11 @@ func (a *ConcurrentAgent) InitializeConcurrentActions(actions []schema.AgentActi
 
 // ExecuteConcurrentActions executes the concurrent actions for the agent.
 func (a *ConcurrentAgent) ExecuteConcurrentActions() {
+	var wg sync.WaitGroup
 	for _, node := range a.Graph.Nodes {
+		wg.Add(1)
 		go func(n *Node) {
+			defer wg.Done()
 			for _, action := range n.Actions {
 				// Implement the logic for self-reflecting or human-in-the-loop tasks.
 				// This is a placeholder implementation.
@@ -86,5 +92,6 @@ func (a *ConcurrentAgent) ExecuteConcurrentActions() {
 			}
 		}(node)
 	}
+	wg.Wait()
 	a.Graph.Execute()
 }
