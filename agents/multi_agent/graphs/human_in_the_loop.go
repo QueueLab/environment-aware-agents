@@ -32,26 +32,46 @@ func (a *HumanInTheLoopAgent) Plan(
 	intermediateSteps []schema.AgentStep,
 	inputs map[string]string,
 ) ([]schema.AgentAction, *schema.AgentFinish, error) {
-	// Implement the logic to decide the next action or return the final result.
-	// This is a placeholder implementation.
-	if len(inputs) == 0 {
-		return nil, &schema.AgentFinish{ReturnValues: map[string]any{"output": "no input"}}, nil
+	if len(intermediateSteps) == 0 {
+		// Initial step - create actions based on input
+		actions := []schema.AgentAction{
+			{Tool: "analyze", ToolInput: inputs["input"]},
+		}
+		return actions, nil, nil
 	}
-	return nil, &schema.AgentFinish{ReturnValues: map[string]any{"output": inputs["input"]}}, nil
+
+	// Analyze previous steps and decide next action
+	lastStep := intermediateSteps[len(intermediateSteps)-1]
+	if lastStep.Observation != "" {
+		// If we have an observation, process it and potentially finish
+		if len(intermediateSteps) >= 3 { // Limit steps to prevent infinite loops
+			return nil, &schema.AgentFinish{
+				ReturnValues: map[string]any{
+					"output": fmt.Sprintf("Final result after analysis: %s", lastStep.Observation),
+				},
+			}, nil
+		}
+		// Continue with next action
+		return []schema.AgentAction{
+			{Tool: "process", ToolInput: lastStep.Observation},
+		}, nil, nil
+	}
+
+	return nil, &schema.AgentFinish{
+		ReturnValues: map[string]any{
+			"output": "Unable to determine next action",
+		},
+	}, nil
 }
 
 // GetInputKeys returns the input keys for the agent.
 func (a *HumanInTheLoopAgent) GetInputKeys() []string {
-	// Implement the logic to return the input keys.
-	// This is a placeholder implementation.
-	return []string{"input"}
+	return []string{"input", "context", "parameters"}
 }
 
 // GetOutputKeys returns the output keys for the agent.
 func (a *HumanInTheLoopAgent) GetOutputKeys() []string {
-	// Implement the logic to return the output keys.
-	// This is a placeholder implementation.
-	return []string{"output"}
+	return []string{"output", "reasoning", "actions"}
 }
 
 // GetTools returns the tools available to the agent.
@@ -80,15 +100,27 @@ func (a *HumanInTheLoopAgent) ExecuteHumanInTheLoopActions() {
 		go func(n *Node) {
 			defer wg.Done()
 			for _, action := range n.Actions {
-				// Implement the logic for self-reflecting or human-in-the-loop tasks.
-				// This is a placeholder implementation.
 				n.mu.Lock()
 				n.State = "executing"
 				n.mu.Unlock()
-				// Simulate action execution
-				n.mu.Lock()
-				n.State = "completed"
-				n.mu.Unlock()
+
+				if agentAction, ok := action.(schema.AgentAction); ok {
+					n.mu.Lock()
+					// Execute the tool
+					for _, tool := range a.Tools {
+						if tool.Name() == agentAction.Tool {
+							result, err := tool.Call(agentAction.ToolInput)
+							if err == nil {
+								n.Result = result
+							} else {
+								n.Result = fmt.Sprintf("Error: %v", err)
+							}
+							break
+						}
+					}
+					n.State = "completed"
+					n.mu.Unlock()
+				}
 			}
 		}(node)
 	}
@@ -98,8 +130,28 @@ func (a *HumanInTheLoopAgent) ExecuteHumanInTheLoopActions() {
 
 // HumanFeedback collects feedback from a human user.
 func (a *HumanInTheLoopAgent) HumanFeedback(ctx context.Context, feedback string) error {
-	// Implement the logic to handle human feedback.
-	// This is a placeholder implementation.
-	fmt.Println("Human feedback received:", feedback)
+	// Process the feedback and update the graph
+	feedbackNode := &Node{
+		ID:    len(a.Graph.Nodes),
+		Value: feedback,
+		State: "feedback",
+	}
+	a.Graph.AddNode(feedbackNode)
+
+	// Update the state of related nodes based on feedback
+	for _, node := range a.Graph.Nodes {
+		if node.State == "completed" {
+			node.mu.Lock()
+			node.Feedback = feedback
+			// Potentially modify the node's state or trigger new actions based on feedback
+			if feedback == "reject" {
+				node.State = "rejected"
+			} else if feedback == "approve" {
+				node.State = "approved"
+			}
+			node.mu.Unlock()
+		}
+	}
+
 	return nil
 }

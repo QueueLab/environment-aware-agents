@@ -32,26 +32,59 @@ func (a *ConcurrentAgent) Plan(
 	intermediateSteps []schema.AgentStep,
 	inputs map[string]string,
 ) ([]schema.AgentAction, *schema.AgentFinish, error) {
-	// Implement the logic to decide the next action or return the final result.
-	// This is a placeholder implementation.
-	if len(inputs) == 0 {
-		return nil, &schema.AgentFinish{ReturnValues: map[string]any{"output": "no input"}}, nil
+	if len(intermediateSteps) == 0 {
+		// Initial planning phase
+		actions := make([]schema.AgentAction, 0)
+		for toolName, input := range inputs {
+			action := schema.AgentAction{
+				Tool:  toolName,
+				Input: input,
+				Log:   "Initial action from input",
+			}
+			actions = append(actions, action)
+		}
+		return actions, nil, nil
 	}
-	return nil, &schema.AgentFinish{ReturnValues: map[string]any{"output": inputs["input"]}}, nil
+
+	// Analyze intermediate steps and decide next actions
+	allCompleted := true
+	for _, step := range intermediateSteps {
+		if step.Action != nil && !step.Observation.IsEmpty() {
+			continue
+		}
+		allCompleted = false
+		break
+	}
+
+	if allCompleted {
+		// All steps completed, return final result
+		result := make(map[string]any)
+		for _, step := range intermediateSteps {
+			result[step.Action.Tool] = step.Observation.String()
+		}
+		return nil, &schema.AgentFinish{ReturnValues: result}, nil
+	}
+
+	// Continue with more actions if needed
+	return []schema.AgentAction{}, nil, nil
 }
 
 // GetInputKeys returns the input keys for the agent.
 func (a *ConcurrentAgent) GetInputKeys() []string {
-	// Implement the logic to return the input keys.
-	// This is a placeholder implementation.
-	return []string{"input"}
+	keys := make([]string, 0)
+	for _, tool := range a.Tools {
+		keys = append(keys, tool.Name())
+	}
+	return keys
 }
 
 // GetOutputKeys returns the output keys for the agent.
 func (a *ConcurrentAgent) GetOutputKeys() []string {
-	// Implement the logic to return the output keys.
-	// This is a placeholder implementation.
-	return []string{"output"}
+	keys := make([]string, 0)
+	for _, tool := range a.Tools {
+		keys = append(keys, tool.Name()+"_result")
+	}
+	return keys
 }
 
 // GetTools returns the tools available to the agent.
@@ -80,15 +113,34 @@ func (a *ConcurrentAgent) ExecuteConcurrentActions() {
 		go func(n *Node) {
 			defer wg.Done()
 			for _, action := range n.Actions {
-				// Implement the logic for self-reflecting or human-in-the-loop tasks.
-				// This is a placeholder implementation.
+				agentAction, ok := action.(schema.AgentAction)
+				if !ok {
+					n.mu.Lock()
+					n.State = "error"
+					n.mu.Unlock()
+					continue
+				}
+
 				n.mu.Lock()
 				n.State = "executing"
 				n.mu.Unlock()
-				// Simulate action execution
-				n.mu.Lock()
-				n.State = "completed"
-				n.mu.Unlock()
+
+				// Execute the tool
+				for _, tool := range a.Tools {
+					if tool.Name() == agentAction.Tool {
+						result, err := tool.Call(agentAction.Input)
+						n.mu.Lock()
+						if err != nil {
+							n.State = "error"
+							n.Result = err.Error()
+						} else {
+							n.State = "completed"
+							n.Result = result
+						}
+						n.mu.Unlock()
+						break
+					}
+				}
 			}
 		}(node)
 	}

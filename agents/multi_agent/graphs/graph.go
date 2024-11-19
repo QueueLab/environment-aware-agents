@@ -1,4 +1,5 @@
-package graph_orchestration
+package graphs
+
 
 import (
 	"context"
@@ -55,7 +56,7 @@ func (g *Graph) AddEdge(fromID, toID string) error {
 }
 
 // Execute executes the graph starting from the given node ID.
-func (g *Graph) Execute(ctx context.Context, startID string, agent *GraphAgent) error {
+func (g *Graph) Execute(ctx context.Context, startID string, agent schema.Agent) error {
 	g.mu.Lock()
 	startNode, exists := g.Nodes[startID]
 	g.mu.Unlock()
@@ -67,7 +68,7 @@ func (g *Graph) Execute(ctx context.Context, startID string, agent *GraphAgent) 
 	return g.executeNode(ctx, startNode, agent)
 }
 
-func (g *Graph) executeNode(ctx context.Context, node *Node, agent *GraphAgent) error {
+func (g *Graph) executeNode(ctx context.Context, node *Node, agent schema.Agent) error {
 	// Execute the action associated with the node
 	_, _, err := agent.Plan(ctx, nil, map[string]string{"input": node.ID})
 	if err != nil {

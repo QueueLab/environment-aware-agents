@@ -30,23 +30,43 @@ func (a *GraphAgent) Plan(
 	intermediateSteps []schema.AgentStep,
 	inputs map[string]string,
 ) ([]schema.AgentAction, *schema.AgentFinish, error) {
-	// Implement the logic to decide the next action or return the final result.
-	// This is a placeholder implementation.
-	return nil, nil, nil
+	// Analyze the current state of the graph
+	currentState := a.Graph.GetCurrentState()
+
+	// Check if we've reached a terminal state
+	if a.Graph.IsTerminalState(currentState) {
+		return nil, &schema.AgentFinish{
+			ReturnValues: map[string]string{"result": currentState.String()},
+			Log:          "Reached terminal state",
+		}, nil
+	}
+
+	// Determine next actions based on graph traversal
+	actions := make([]schema.AgentAction, 0)
+	nextStates := a.Graph.GetNextStates(currentState)
+
+	for _, state := range nextStates {
+		action := schema.AgentAction{
+			Tool: "graph_traversal",
+			ToolInput: map[string]string{
+				"target_state": state.String(),
+			},
+			Log: "Transitioning to next state",
+		}
+		actions = append(actions, action)
+	}
+
+	return actions, nil, nil
 }
 
 // GetInputKeys returns the input keys for the agent.
 func (a *GraphAgent) GetInputKeys() []string {
-	// Implement the logic to return the input keys.
-	// This is a placeholder implementation.
-	return []string{}
+	return []string{"initial_state", "goal_state", "constraints"}
 }
 
 // GetOutputKeys returns the output keys for the agent.
 func (a *GraphAgent) GetOutputKeys() []string {
-	// Implement the logic to return the output keys.
-	// This is a placeholder implementation.
-	return []string{}
+	return []string{"final_state", "path", "metrics"}
 }
 
 // GetTools returns the tools available to the agent.
