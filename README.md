@@ -1,5 +1,4 @@
-
-On going reasearch on multi agent systems 
+This is research in semi autonomous highly concurrent multi agent system with varying levels of memory implemented across the stack. This pushes the boundary of in context learning and alignment for human in the loop processes. This research involves creating nature inspired workflows that mimic highly concurrent processes to enable solutions for high dimensional and dynamical problems.
 
 ## Documentation
 
